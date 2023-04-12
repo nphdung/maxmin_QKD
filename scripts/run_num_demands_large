@@ -1,0 +1,20 @@
+#!/bin/csh
+cd ..
+set case_dir = "./cases/num_demands/large_scale"	# modify this directory
+
+foreach num_demands (20 22 24 26 28 30)
+	cp -f $case_dir/Sample_100_nodes_{$num_demands}_demands.txt ./Sample.txt
+	#foreach alg (lpr lpr_ra)	# modify the algorithms
+	foreach alg (pro_serving)	# modify the algorithms
+		cp -f $case_dir/{$alg}.py ./run.py
+
+		if (-e result.txt) then
+			rm -f result.txt
+		endif
+		foreach line ("`cat Sample.txt`")
+			./run.py $line
+		end
+		mv -f result.txt $case_dir/result_{$alg}_{$num_demands}.txt
+	end
+end
+#EOF

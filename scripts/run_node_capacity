@@ -1,0 +1,29 @@
+#!/bin/csh
+cd ..
+set case_dir = "./cases/capacity/nodes"
+
+if (-e log.txt) then
+	rm -f log.txt
+endif
+
+#foreach node_cap (50 60 70 80 90 100)
+foreach node_cap (20 30 40)
+	set sample = "{$case_dir}/Sample_100_nodes_20_demands.txt"
+	cp -f $sample ./Sample.txt
+	foreach alg (lpr lpr_ra pro_serving)
+		cp -f ${case_dir}/{$alg}.py ./run.py
+		if (-e result.txt) then
+			rm -f result.txt
+		endif
+		#@ cnt = 1
+		foreach line ("`cat Sample.txt`")
+			#echo "SAMPLE: $cnt" >> log.txt
+			#./run.py $line $num_nodes >> log.txt
+			./run.py $line $node_cap
+			#@ cnt += 1
+		end
+		mv -f result.txt $case_dir/result_{$alg}_{$node_cap}.txt
+		rm -f ./run.py
+	end
+end
+#EOF

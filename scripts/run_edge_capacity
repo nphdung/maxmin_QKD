@@ -1,0 +1,33 @@
+#!/bin/csh
+cd ..
+set case_dir = "./cases/capacity/edges"
+
+if (-e log.txt) then
+	rm -f log.txt
+endif
+
+set sample = "{$case_dir}/Sample_100_nodes_20_demands.txt"
+cp -f $sample ./Sample.txt
+
+#foreach channel_cap (1 2 3 4 5)
+foreach channel_cap (6 7)
+	foreach alg (lpr lpr_ra pro_serving)
+	#foreach alg (pro_serving)
+		cp -f ${case_dir}/{$alg}.py ./run.py
+
+		if (-e result.txt) then
+			rm -f result.txt
+		endif
+		#@ cnt = 1
+		foreach line ("`cat Sample.txt`")
+			#echo "SAMPLE: $cnt" >> log.txt
+			#./run.py $line $num_nodes >> log.txt
+			./run.py $line $channel_cap
+			#@ cnt += 1
+		end
+		mv -f result.txt $case_dir/result_{$alg}_{$channel_cap}.txt
+		rm -f ./run.py
+	end
+end
+rm -f ./Sample.txt
+#EOF
