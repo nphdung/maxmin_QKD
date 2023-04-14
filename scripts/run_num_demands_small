@@ -2,7 +2,7 @@
 cd ..
 set case_dir = "./cases/num_demands/small_scale"	# modify this directory
 set nodes = 30
-foreach alg (lpr_ra pro_serving ilp)
+foreach alg (ilp)
 	cp -f $case_dir/{$alg}.py ./run.py
 	sed -i "/nov =/s/num_nodes/$nodes/" run.py
 	rm -f agg_result_m.txt agg_result_j.txt agg_result_ttk.txt
