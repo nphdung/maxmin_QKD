@@ -2,11 +2,12 @@
 from pulp import *
 import sys
 import network_gen as ng
+from prg import jain_index
 
-a = 0.9
+a = 0.99
 
 #print("========== Generate topology ==========")
-nov = 100    # the number of vertices of the QKD network
+nov = num_nodes    # the number of vertices of the QKD network
 prob = 0.05  # the probability of generating edges in the QKD network
 UG = ng.gen(nov,prob)   # generate the undirected topology
 DG = ng.ug2dg(UG)       # generate the directed topology
@@ -94,16 +95,21 @@ for v in nodes:
 for d in demands:
     prob += m*d[3] <= lp_f_i[d] + d[2]
 
-prob.writeLP("ilp.txt")
+#prob.writeLP("ilp.txt")
 prob.solve()    # begin to solve the linear programming
 obj = value(prob.objective)
-fptr = open("result.txt","a")
-fptr.write(f"{obj}\n")
-fptr.close()
-#print(value(prob.objective))
+total_key = sum([lp_f_i[var].varValue for var in lp_f_i])   # total keys distributed over the network
+# calculate the Jane index
+temp_demands = [(d[0],d[1],d[2]+lp_f_i[d].varValue,d[3]) for d in lp_f_i]
+demands = temp_demands
+j_id = jain_index(demands)
 
-#for var in lp_f_i_uv:
-#    print(var,"=",lp_f_i_uv[var],"=",lp_f_i_uv[var].varValue)
-
-#for var in lp_f_i:
-#    print(var,"=",lp_f_i[var],"=",lp_f_i[var].varValue)
+fptr1 = open("result_m.txt","a")
+fptr2 = open("result_ttk.txt","a")
+fptr3 = open("result_j.txt","a")
+fptr1.write(f"{obj}\n")
+fptr2.write(f"{total_key}\n")
+fptr3.write(f"{j_id}\n")
+fptr1.close()
+fptr2.close()
+fptr3.close()

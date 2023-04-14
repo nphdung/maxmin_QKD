@@ -66,3 +66,13 @@ def relaxed_program(a,ug,dg,demands):
     obj = value(prob.objective)
 
     return (obj,m,lp_f_i_uv,lp_f_i)
+
+def jain_index(demands):
+    tt = 0
+    tt2 = 0
+    for d in demands:
+        remaining_slot = float(d[2]/d[3])
+        tt = tt + remaining_slot
+        tt2 = tt2 + remaining_slot**2
+    jain_id = float(tt**2/(len(demands)*tt2))
+    return jain_id

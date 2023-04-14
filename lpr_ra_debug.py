@@ -52,7 +52,7 @@ total_remaining_key = sum([d[2] for d in demands])
 init_remaining_key = total_remaining_key
 k_flag = False
 t_flag = False
-#fptr = open("log.txt",'w')
+
 while True:
     DG = ng.ug2dg(UG)       # generate the directed topology
     # call the linear program
@@ -85,7 +85,7 @@ while True:
         flow_list[d] = ng.det_flow(d,demand_edge[d])    # determine the flow passing over each edge for each demand
         for e in flow_list[d]:
             if e[0] == d[0]: temp_total_flow = temp_total_flow + flow_list[d][e]
-        demands_total_flow[d] = temp_total_flow
+        demands_total_flow[d] = temp_total_flow + demands_total_flow[d]
         #print(f"demand {d}, total flow: {temp_total_flow}")
 
     # update the network and demands

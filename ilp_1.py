@@ -2,6 +2,7 @@
 from pulp import *
 #import sys
 import network_gen as ng
+from prg import jain_index
 
 a = 0.99
 
@@ -96,7 +97,7 @@ for v in nodes:
 for d in demands:
     prob += m*d[3] <= lp_f_i[d] + d[2]
 
-prob.writeLP("ilp.txt")
+#prob.writeLP("ilp.txt")
 prob.solve()    # begin to solve the linear programming
 obj = value(prob.objective)
 #fptr = open("result.txt","a")
@@ -113,3 +114,16 @@ for var in lp_f_i:
 print("Maximum of minimal time slot:",m.varValue)
 total_key = sum([lp_f_i[var].varValue for var in lp_f_i])
 print("Total key the network can distribute:",total_key)
+temp_demands = [(d[0],d[1],d[2]+lp_f_i[d].varValue,d[3]) for d in lp_f_i]
+demands = temp_demands
+# calculate Jane index
+j_id = jain_index(demands)
+#tt = 0
+#tt2 = 0
+#for var in lp_f_i:
+#    remaining_slot = float((var[2]+lp_f_i[var].varValue)/var[3])
+#    tt = tt + remaining_slot
+#    tt2 = tt2 + remaining_slot**2
+
+#jain_index = float(tt**2/(len(lp_f_i)*tt2))
+print("Jain index:",j_id)
