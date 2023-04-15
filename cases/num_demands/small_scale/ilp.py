@@ -99,6 +99,7 @@ for d in demands:
 prob.solve()    # begin to solve the linear programming
 obj = value(prob.objective)
 total_key = sum([lp_f_i[var].varValue for var in lp_f_i])   # total keys distributed over the network
+mm = m.varValue
 # calculate the Jane index
 temp_demands = [(d[0],d[1],d[2]+lp_f_i[d].varValue,d[3]) for d in lp_f_i]
 demands = temp_demands
@@ -107,7 +108,7 @@ j_id = jain_index(demands)
 fptr1 = open("result_m.txt","a")
 fptr2 = open("result_ttk.txt","a")
 fptr3 = open("result_j.txt","a")
-fptr1.write(f"{obj}\n")
+fptr1.write(f"{mm}\n")
 fptr2.write(f"{total_key}\n")
 fptr3.write(f"{j_id}\n")
 fptr1.close()
