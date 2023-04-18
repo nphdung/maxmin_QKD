@@ -4,9 +4,9 @@ import sys
 import network_gen as ng
 from prg import *
 
+a = 0.99
 l_argv = sys.argv
 l_argv.pop(0)
-
 #print("========== Generate topology ==========")
 nov = 100    # the number of vertices of the QKD network
 prob = float(l_argv.pop())  # the probability of generating edges in the QKD network
@@ -28,7 +28,8 @@ d_edges = list(DG.edges)    # the list of directed edges
 # k_i: the number of the remaining keys
 # r_i: the consumption rate (keys/time slot)
 #print("========== The set of demands ==========")
-
+#l_argv = sys.argv
+#l_argv.pop(0)
 l_demand = list()
 for i in l_argv:
     j = i.strip()
@@ -43,8 +44,18 @@ demands_total_flow = dict()
 for d in demands:
     demands_total_flow[d] = 0
 
-(obj,f_i_uv,f_i) = relaxed_program(UG,DG,demands)
-
-fptr = open("result.txt","a")
-fptr.write(f"{obj}\n")
-fptr.close()
+(obj,m,f_i_uv,f_i) = relaxed_program(a,UG,DG,demands)
+total_key = sum([f_i[var].varValue for var in f_i])   # total keys distributed over the network
+temp_demands = [(d[0],d[1],d[2]+f_i[d].varValue,d[3]) for d in f_i]
+demands = temp_demands
+j_id = jain_index(demands)
+mm = m.varValue
+fptr1 = open("result_m.txt","a")
+fptr2 = open("result_ttk.txt","a")
+fptr3 = open("result_j.txt","a")
+fptr1.write(f"{mm}\n")
+fptr2.write(f"{total_key}\n")
+fptr3.write(f"{j_id}\n")
+fptr1.close()
+fptr2.close()
+fptr3.close()

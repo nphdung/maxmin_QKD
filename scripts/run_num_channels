@@ -1,31 +1,31 @@
 #!/bin/csh
 cd ..
 set case_dir = "./cases/network/num_channels"
-
-if (-e log.txt) then
-	rm -f log.txt
-endif
-
-set sample = "{$case_dir}/Sample_100_nodes_20_demands.txt"
+set nodes = 100
+set demands = 20
+set sample = "{$case_dir}/Sample_{$nodes}_nodes_{$demands}_demands.txt"
 cp -f $sample ./Sample.txt
-
-foreach channel_num (1 2 3 4 5 6 7 8)
-	#foreach alg (lpr)
-	foreach alg (lpr_ra pro_serving)
-		cp -f ${case_dir}/{$alg}.py ./run.py
-
-		if (-e result.txt) then
-			rm -f result.txt
-		endif
-		#@ cnt = 1
+foreach alg (lpr lpr_ra pro_serving)
+	cp -f $case_dir/{$alg}.py ./run.py
+	rm -f agg_result_m.txt agg_result_j.txt agg_result_ttk.txt
+	foreach channel_num (1 2 3 4 5 6 7 8)
+		rm -f result_m.txt result_j.txt result_ttk.txt
 		foreach line ("`cat Sample.txt`")
-			#echo "SAMPLE: $cnt" >> log.txt
-			#./run.py $line $num_nodes >> log.txt
 			./run.py $line $channel_num
-			#@ cnt += 1
 		end
-		mv -f result.txt $case_dir/result_{$alg}_{$channel_num}.txt
-	end
+		set avr = `./agg.py result_m.txt`
+		echo "$channel_num $avr" >> agg_result_m.txt
+		set avr = `./agg.py result_j.txt`
+		echo "$channel_num $avr" >> agg_result_j.txt
+		set avr = `./agg.py result_ttk.txt`
+		echo "$channel_num $avr" >> agg_result_ttk.txt
+		mv -f result_m.txt $case_dir/result_m_{$alg}_{$channel_num}.txt
+		mv -f result_j.txt $case_dir/result_j_{$alg}_{$channel_num}.txt
+		mv -f result_ttk.txt $case_dir/result_ttk_{$alg}_{$channel_num}.txt
+		end
+	mv -f agg_result_m.txt $case_dir/agg_result_m_{$alg}.txt
+	mv -f agg_result_j.txt $case_dir/agg_result_j_{$alg}.txt
+	mv -f agg_result_ttk.txt $case_dir/agg_result_ttk_{$alg}.txt
 end
-rm -f ./Sample.txt
+rm -f run.py Sample.txt
 #EOF
