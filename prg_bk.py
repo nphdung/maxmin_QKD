@@ -32,43 +32,20 @@ def relaxed_program(a,ug,dg,demands):
 
     # the first constraint
     for d in demands:
-        temp_1 = list()
-        temp_2 = list()
-        for v in nodes:
-            if (d[0],v) in d_edges: temp_1.append(lp_f_i_uv[d,(d[0],v)])
-            if (v,d[0]) in d_edges: temp_2.append(lp_f_i_uv[d,(v,d[0])])
-        prob += lpSum(temp_1) - lpSum(temp_2) == lp_f_i[d]
-    #for d in demands:
-    #    prob += lpSum([lp_f_i_uv[d,(d[0],v)] for v in nodes if (d[0],v) in d_edges]) - \
-    #            lpSum([lp_f_i_uv[d,(v,d[0])] for v in nodes if (v,d[0]) in d_edges]) == lp_f_i[d]
+        prob += lpSum([lp_f_i_uv[d,(d[0],v)] for v in nodes if (d[0],v) in d_edges]) - \
+                lpSum([lp_f_i_uv[d,(v,d[0])] for v in nodes if (v,d[0]) in d_edges]) == lp_f_i[d]
     
     # the second constraint
     for v in nodes:
         for d in demands:
-            if v != d[0] and v!= d[1]:
-                temp_1 = list()
-                temp_2 = list()
-                for u in nodes:
-                    if (v,u) in d_edges: temp_1.append(lp_f_i_uv[d,(v,u)])
-                    if (u,v) in d_edges: temp_2.append(lp_f_i_uv[d,(u,v)])
-                prob += lpSum(temp_1) - lpSum(temp_2) == 0
-    #for v in nodes:
-    #    for d in demands:
-    #        if v != d[0] and v != d[1]:
-    #            prob += lpSum([lp_f_i_uv[d,(v,u)] for u in nodes if (v,u) in d_edges]) - \
-    #                    lpSum([lp_f_i_uv[d,(u,v)] for u in nodes if (u,v) in d_edges]) == 0
+            if v != d[0] and v != d[1]:
+                prob += lpSum([lp_f_i_uv[d,(v,u)] for u in nodes if (v,u) in d_edges]) - \
+                        lpSum([lp_f_i_uv[d,(u,v)] for u in nodes if (u,v) in d_edges]) == 0
 
     # the third constraint
     for (u,v) in edges:
-        temp_1 = list()
-        temp_2 = list()
-        for d in demands:
-            temp_1.append(lp_f_i_uv[d,(u,v)])
-            temp_2.append(lp_f_i_uv[d,(v,u)])
-        prob += lpSum(temp_1) + lpSum(temp_2) <= ug.edges[(u,v)]["tot_cap"]
-    #for (u,v) in edges:
-    #    prob += lpSum([lp_f_i_uv[d,(u,v)] for d in demands]) + \
-    #            lpSum([lp_f_i_uv[d,(v,u)] for d in demands]) <= ug.edges[(u,v)]["tot_cap"] 
+        prob += lpSum([lp_f_i_uv[d,(u,v)] for d in demands]) + \
+                lpSum([lp_f_i_uv[d,(v,u)] for d in demands]) <= ug.edges[(u,v)]["tot_cap"] 
     
     # the fourth constraint
     for v in nodes:

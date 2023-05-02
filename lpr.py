@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 from pulp import *
-import sys
+#import sys
 import network_gen as ng
 from prg import *
 
 a = 0.99
 
 #print("========== Generate topology ==========")
-nov = 100    # the number of vertices of the QKD network
+nov = 300    # the number of vertices of the QKD network
 prob = 0.05  # the probability of generating edges in the QKD network
 UG = ng.gen(nov,prob)   # generate the undirected topology
 DG = ng.ug2dg(UG)       # generate the directed topology

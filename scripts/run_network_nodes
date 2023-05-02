@@ -2,29 +2,28 @@
 cd ..
 set case_dir = "./cases/network/num_nodes"
 
-if (-e log.txt) then
-	rm -f log.txt
-endif
-
-#foreach num_nodes (100 150 200 250 300)
-foreach num_nodes (50 100 150 200 250 300)
-	set sample = "{$case_dir}/Sample_{$num_nodes}_nodes_20_demands.txt"
-	cp -f $sample ./Sample.txt
-	#foreach alg (lpr lpr_ra)
-	foreach alg (pro_serving)
-		cp -f ${case_dir}/{$alg}.py ./run.py
-
-		if (-e result.txt) then
-			rm -f result.txt
-		endif
-		#@ cnt = 1
+foreach alg (lpr lpr_ra pro_serving)
+	cp -f ${case_dir}/{$alg}.py ./run.py 
+	rm -f agg_result_m.txt agg_result_j.txt agg_result_ttk.txt
+	foreach num_nodes (50 100 150 200 250 300)
+		set sample = "{$case_dir}/Sample_{$num_nodes}_nodes_20_demands.txt"
+		cp -f $sample ./Sample.txt
+		rm -f result_m.txt result_j.txt result_ttk.txt
 		foreach line ("`cat Sample.txt`")
-			#echo "SAMPLE: $cnt" >> log.txt
-			#./run.py $line $num_nodes >> log.txt
 			./run.py $line $num_nodes
-			#@ cnt += 1
 		end
-		mv -f result.txt $case_dir/result_{$alg}_{$num_nodes}.txt
+		set avr = `./agg.py result_m.txt`
+		echo "$num_nodes $avr" >> agg_result_m.txt
+		set avr = `./agg.py result_j.txt`
+		echo "$num_nodes $avr" >> agg_result_j.txt
+		set avr = `./agg.py result_ttk.txt`
+		echo "$num_nodes $avr" >> agg_result_ttk.txt
+		mv -f result_m.txt $case_dir/result_m_{$alg}_{$num_nodes}.txt
+		mv -f result_j.txt $case_dir/result_j_{$alg}_{$num_nodes}.txt
+		mv -f result_ttk.txt $case_dir/result_ttk_{$alg}_{$num_nodes}.txt
 	end
+	mv -f agg_result_m.txt $case_dir/agg_result_m_{$alg}.txt
+	mv -f agg_result_j.txt $case_dir/agg_result_j_{$alg}.txt
+	mv -f agg_result_ttk.txt $case_dir/agg_result_ttk_{$alg}.txt
 end
 #EOF
