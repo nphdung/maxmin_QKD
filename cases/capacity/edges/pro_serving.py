@@ -3,18 +3,19 @@
 import sys
 import network_gen as ng
 import networkx as nx
+from prg import jain_index
 
 INF = 10000
-
 l_argv = sys.argv
 l_argv.pop(0)
-
 #print("========== Generate topology ==========")
-nov = 100   # the number of vertices of the QKD network
+nov = num_nodes    # the number of vertices of the QKD network
 prob = 0.05  # the probability of generating edges in the QKD network
 channel_cap = int(l_argv.pop())  # channel capacity: the number of keys that can be generated per time slot
 UG = ng.gen(nov,prob,channel_cap_lb=channel_cap,channel_cap_ub=channel_cap+1)   # generate the undirected topology
 
+#l_argv = sys.argv
+#l_argv.pop(0)
 l_demand = list()
 for i in l_argv:
     j = i.strip()
@@ -29,7 +30,9 @@ demands = l_demand
 #demands = [(74,66,16,1),(25,26,8,1),(4,44,1,1),(29,73,4,1),(97,62,13,1),(66,45,10,1),(15,87,11,1),(80,91,13,1),(89,46,7,1),(98,78,9,1),(41,93,10,1),(50,81,6,1),(2,91,3,1),(22,5,8,1),(48,14,11,1),(20,83,13,1),(23,12,16,1),(54,0,15,1),(90,27,7,1),(66,71,15,1),(46,63,25,1),(43,91,8,1),(1,89,7,1),(18,31,13,1),(12,61,6,1),(16,87,7,1),(32,30,18,1),(32,98,7,1),(1,34,11,1),(46,49,5,1)]
 #cur_time_slot = min([d[2]/d[3] for d in demands])
 demands_copy = demands.copy()
-while True:
+demands_final = list()
+while len(demands_copy) > 0:
+    has_demand = False
     cur_time_slot = min([d[2]/d[3] for d in demands_copy])
     d_list = list()
     min_slot = INF
@@ -52,8 +55,11 @@ while True:
         dst = d[1]
         # check if the source and destination have enough memory or not
         if (UG.nodes[src]["cap"] <= 0) or (UG.nodes[dst]["cap"] <= 0):
-            node_ok = False
-            break   # break if the network cannot satisfy the demand any more due to the insufficiency of the source or destination key memories
+            #node_ok = False
+            demands_final.append(d)
+            demands_copy.remove(d)
+            continue    # if the source or destination of the demand is insufficient key memory, the demand cannot be satified any more
+                        # hence the demand need to be removed from the original demand set
 
         copy_UG = UG.copy()
         for v in list(copy_UG.nodes):
@@ -61,40 +67,56 @@ while True:
             if copy_UG.nodes[v]["cap"] <= 1: copy_UG.remove_node(v) # remove the node with insufficient capacity (memory) from the network
         
         if not nx.has_path(copy_UG,src,dst):    # check if there is a path between the source and the destination after removing some nodes
-            path_chk_ok = False                 # if not we cannot serve this request, hence cannot improve the result
-            break   # break if the network cannot satisfy the demand any more due to the insufficient capacity of edges
-
+            demands_final.append(d)
+            demands_copy.remove(d)
+            #path_chk_ok = False                 # if not we cannot serve this request, hence cannot improve the result
+            continue   # break if the network cannot satisfy the demand any more due to the insufficient capacity of edges
+        
+        has_demand = True
         d_path = nx.shortest_path(copy_UG,src,dst)
         if len(d_path) < hop_cnt:
             hop_cnt = len(d_path)
             selected_demand = d             # the demand
             selected_demand_path = d_path   # the demand path
     
-    if (not node_ok) or (not path_chk_ok): break
-
-    node_cap_used = dict()
-    edge_cap_used = dict()
-    for i in range(len(selected_demand_path)):
-        cur_n = selected_demand_path[i]
+    #if (not node_ok) or (not path_chk_ok): break
+    if not has_demand: continue
+    else:
+        node_cap_used = dict()
+        edge_cap_used = dict()
+        for i in range(len(selected_demand_path)):
+            cur_n = selected_demand_path[i]
         
-        if i == 0 or i == len(selected_demand_path) - 1:    # if the node is the end node
-            node_cap_used[cur_n] = 1
-        else:                                               # intermediate nodes
-            node_cap_used[cur_n] = 2
+            if i == 0 or i == len(selected_demand_path) - 1:    # if the node is the end node
+                node_cap_used[cur_n] = 1
+            else:                                               # intermediate nodes
+                node_cap_used[cur_n] = 2
 
-        if i < len(selected_demand_path)-1:
-            next_n = selected_demand_path[i+1]
-            if next_n < cur_n:
-                edge_cap_used[(next_n,cur_n)] = 1
-            else:
-                edge_cap_used[(cur_n,next_n)] = 1
+            if i < len(selected_demand_path)-1:
+                next_n = selected_demand_path[i+1]
+                if next_n < cur_n:
+                    edge_cap_used[(next_n,cur_n)] = 1
+                else:
+                    edge_cap_used[(cur_n,next_n)] = 1
 
-    UG = ng.network_update(node_cap_used,edge_cap_used,UG)  # update the network
+    UG = ng.network_update(node_cap_used,edge_cap_used,UG,True)  # update the network
     temp_d = (selected_demand[0],selected_demand[1],selected_demand[2]+1,selected_demand[3])
     demands_copy.remove(selected_demand)
     demands_copy.append(temp_d)
 
-print(f"The maximum number of remaining time slots: {cur_time_slot}")
-fptr = open("result.txt","a")
-fptr.write(f"{cur_time_slot}\n")
-fptr.close()
+maxmin = min([d[2]/d[3] for d in demands_final])
+
+original = sum([d[2] for d in demands])
+target = sum([d[2] for d in demands_final])
+
+total_key = target - original
+j_id = jain_index(demands_final)
+fptr1 = open("result_m.txt","a")
+fptr2 = open("result_ttk.txt","a")
+fptr3 = open("result_j.txt","a")
+fptr1.write(f"{maxmin}\n")
+fptr2.write(f"{total_key}\n")
+fptr3.write(f"{j_id}\n")
+fptr1.close()
+fptr2.close()
+fptr3.close()

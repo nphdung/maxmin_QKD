@@ -2,11 +2,11 @@
 from pulp import *
 import sys
 import network_gen as ng
-from prg import *
+from prg import relaxed_program, jain_index
 
+a = 0.99
 l_argv = sys.argv
 l_argv.pop(0)
-
 #print("========== Generate topology ==========")
 nov = 100    # the number of vertices of the QKD network
 prob = float(l_argv.pop())  # the probability of generating edges in the QKD network
@@ -23,11 +23,14 @@ for i in l_argv:
 demands = l_demand
 
 cur_min_time_slot = min([d[2]/d[3] for d in demands])
-
+total_remaining_key = sum([d[2] for d in demands])
+init_remaining_key = total_remaining_key
+k_flag = False
+t_flag = False
 while True:
     DG = ng.ug2dg(UG)       # generate the directed topology
     # call the linear program
-    (obj,f_i_uv,f_i) = relaxed_program(UG,DG,demands)
+    (obj,m,f_i_uv,f_i) = relaxed_program(a,UG,DG,demands)
 
     demand_edge = dict()
     for d in demands:
@@ -68,26 +71,42 @@ while True:
         if v not in node_cap_used: node_cap_used[v] = cap_used[(u,v)]
         else: node_cap_used[v] = node_cap_used[v] + cap_used[(u,v)]
     
-    UG = ng.network_update(node_cap_used,cap_used,UG)
+    UG = ng.network_update(node_cap_used,cap_used,UG,False)
     
     temp_demands = [(d[0],d[1],d[2]+demands_total_flow[d],d[3]) for d in demands]
     demands = temp_demands
 
+    temp_total_remaining_key = sum(d[2] for d in demands)
+    print(f"new total key: {temp_total_remaining_key}")
+    print(f"current total key: {total_remaining_key}")
+
+    if temp_total_remaining_key > total_remaining_key: total_remaining_key = temp_total_remaining_key
+    else: k_flag = True
+
     new_min_time_slot = min([d[2]/d[3] for d in demands])
     print(f"new: {new_min_time_slot}")
     print(f"cur: {cur_min_time_slot}")
-    if new_min_time_slot <= cur_min_time_slot: break
-    else: cur_min_time_slot = new_min_time_slot
+    if new_min_time_slot > cur_min_time_slot: cur_min_time_slot = new_min_time_slot
+    else: t_flag = True
+
+    if k_flag and t_flag: break
 
     # check if a node in demands in the network
-    no_node = False
-    for d in demands:
-        if d[0] not in UG or d[1] not in UG:
-            no_node = True
-            break
-    if no_node: break
+    #no_node = False
+    #for d in demands:
+    #    if d[0] not in UG or d[1] not in UG:
+    #        no_node = True
+    #        break
+    #if no_node: break
 
-fptr = open("result.txt","a")
-fptr.write(f"{cur_min_time_slot}\n")
-fptr.close()
-#print(f"Objective: {cur_min_time_slot}")
+total_key = total_remaining_key - init_remaining_key
+j_id = jain_index(demands)
+fptr1 = open("result_m.txt","a")
+fptr2 = open("result_ttk.txt","a")
+fptr3 = open("result_j.txt","a")
+fptr1.write(f"{cur_min_time_slot}\n")
+fptr2.write(f"{total_key}\n")
+fptr3.write(f"{j_id}\n")
+fptr1.close()
+fptr2.close()
+fptr3.close()
